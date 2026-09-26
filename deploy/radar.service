@@ -1,0 +1,30 @@
+[Unit]
+Description=PollTech Radar Social Listening & Analytics Service
+Documentation=https://github.com/Panchraj/polltech-radar
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=radar
+Group=radar
+WorkingDirectory=/opt/polltech-radar
+EnvironmentFile=/etc/radar/radar.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=radar
+LimitNOFILE=65536
+KillMode=mixed
+TimeoutStopSec=20s
+
+# Security Hardening
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
