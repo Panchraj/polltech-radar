@@ -1,0 +1,50 @@
+Generated PostgreSQL password for 'radar_user': 8245ab130c19aedcec31525a2e7441f8
+SAVE THIS PASSWORD for your /etc/radar/radar.env file!
+==========================================================
+ Provisioning PostgreSQL database: radar_prod
+==========================================================
+DO
+CREATE DATABASE
+GRANT
+GRANT
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+==========================================================
+ Database 'radar_prod' configured successfully!
+ Connection string:
+ postgresql://radar_user:8245ab130c19aedcec31525a2e7441f8@127.0.0.1:5432/radar_prod
+
+ fintech@srv1304638:/opt/polltech-radar$ openssl rand -hex 32
+162f5e7120b75bcf3d7d2f54e9a844401c5406e200526ac180dd144e67256cc1
+
+# 1. Generate random secrets automatically
+RAND_SECRET=$(openssl rand -hex 32)
+API_KEY="rad_sec_$(openssl rand -hex 16)"
+
+# 2. Write the file directly (Replace YOUR_PASSWORD_FROM_STEP_3 below)
+sudo tee /etc/radar/radar.env > /dev/null <<EOF
+NODE_ENV=production
+PORT=3000
+HOSTNAME=127.0.0.1
+
+DATABASE_URL=postgresql://radar_user:8245ab130c19aedcec31525a2e7441f8@127.0.0.1:5432/radar_prod
+SESSION_SECRET=$RAND_SECRET
+INTEGRATION_KEY=$API_KEY
+ENABLE_WEB_CONNECTOR=true
+APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+EOF
+
+# 3. Print your generated INTEGRATION_KEY so you can save it
+echo "============================================="
+echo "Your PollTech INTEGRATION_KEY is: $API_KEY"
+echo "============================================="
+
+# 3. Print your generated INTEGRATION_KEY so you can save it
+echo "============================================="
+echo "Your PollTech INTEGRATION_KEY is: $API_KEY"
+echo "============================================="
+[sudo] password for fintech:
+=============================================
+Your PollTech INTEGRATION_KEY is: rad_sec_155f49eebcc5ed7452850270cd38a0c7
+=============================================
