@@ -72,6 +72,10 @@ export const projects = pgTable('projects', {
   // Area semantica: descrizione del tema in linguaggio naturale; genera i
   // termini di ricerca via AI e guida il giudizio di rilevanza (stelle)
   semanticContext: text('semantic_context'),
+  // Identificativo correlato esterno PollTech (se fornito)
+  monitoringId: text('monitoring_id'),
+  // 1 = attivo (ascolto regolare); 0 = disabilitato / dormiente
+  active: integer('active').notNull().default(1),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -618,3 +622,23 @@ export const clinicalTrials = pgTable('clinical_trials', {
   news: jsonb('news').$type<TrialNews>(),
   fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// Schedulazione per-fonte (PollTech Extension E4)
+// ---------------------------------------------------------------------------
+export type ScheduleMode = 'interval' | 'cron' | 'manual';
+
+export const collectionSchedules = pgTable('collection_schedules', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id').notNull(),
+  sourceCode: text('source_code').notNull(),
+  mode: text('mode').$type<ScheduleMode>().notNull().default('manual'),
+  expression: text('expression'),
+  timezone: text('timezone').default('UTC'),
+  enabled: integer('enabled').notNull().default(1),
+  nextRunAt: timestamp('next_run_at', { withTimezone: true }),
+  lastRunAt: timestamp('last_run_at', { withTimezone: true }),
+  maxRunDuration: integer('max_run_duration').default(300),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+

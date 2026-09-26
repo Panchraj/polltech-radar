@@ -11,7 +11,7 @@ export function proxy(req: NextRequest) {
   if (pathname.startsWith('/landing') || pathname.startsWith('/login')
     || pathname.startsWith('/api/auth') || pathname.startsWith('/api/cron/')
     || pathname.startsWith('/share/') || pathname.startsWith('/tour')
-    || pathname.startsWith('/api/mcp')) {
+    || pathname.startsWith('/api/mcp') || pathname.startsWith('/api/integration/')) {
     return NextResponse.next();
   }
   // Verifica la firma del cookie di sessione (senza toccare il DB)

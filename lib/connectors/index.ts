@@ -24,11 +24,12 @@ import { talkwalker } from './talkwalker';
 import { lemmy } from './lemmy';
 import { newsdata } from './newsdata';
 import { podcastIndex } from './podcastindex';
+import { genericWeb } from './web';
 
 export const CONNECTORS: Connector[] = [
   // Gratuite (alcune richiedono una chiave gratuita: reddit, youtube, discord)
   googleNews, gdelt, reddit, bluesky, mastodon, hackerNews, youtube, telegram, rss, linkedinWeb, stackExchange, github, discord, secEdgar, arxiv,
-  lemmy, newsdata, podcastIndex,
+  lemmy, newsdata, podcastIndex, genericWeb,
   // Premium (si attivano con le chiavi API a pagamento)
   xTwitter, instagram, facebook, tiktok, linkedin, newsapi, talkwalker,
 ];
@@ -47,7 +48,7 @@ export const SOURCE_KIND: Record<string, MentionKind> = {
   x: 'post', telegram: 'post', instagram: 'post', facebook: 'post', tiktok: 'post',
   linkedin: 'post', linkedin_web: 'post', stackexchange: 'post', github: 'post', discord: 'post',
   arxiv: 'article', talkwalker_news: 'article', talkwalker: 'post',
-  lemmy: 'post', newsdata: 'article',
+  lemmy: 'post', newsdata: 'article', generic_web: 'article',
   // Un episodio è prodotto da una redazione, come un articolo: si legge con la
   // rassegna, non con i post.
   podcastindex: 'article',
@@ -62,7 +63,7 @@ export const kindOf = (source: string): MentionKind => SOURCE_KIND[source] ?? 'p
  */
 export type SourceCategory = 'general' | 'tech' | 'social' | 'video' | 'audio' | 'finance' | 'academic';
 export const SOURCE_CATEGORY: Record<string, SourceCategory> = {
-  googlenews: 'general', gdelt: 'general', newsapi: 'general', rss: 'general',
+  googlenews: 'general', gdelt: 'general', newsapi: 'general', rss: 'general', generic_web: 'general',
   hackernews: 'tech', stackexchange: 'tech', github: 'tech',
   reddit: 'social', bluesky: 'social', mastodon: 'social', x: 'social',
   instagram: 'social', facebook: 'social', tiktok: 'social', telegram: 'social',
@@ -155,4 +156,9 @@ export const SOURCE_META: Record<string, { label: string; color: string; note?: 
     label: 'Imported file', color: '#94a3b8',
     note: 'Rows imported from your Excel/CSV files: content, authors and dates are exactly what the file contains — nothing is collected from the web.',
   },
+  generic_web: {
+    label: 'Approved Web', color: '#10b981',
+    note: 'Content acquired strictly from approved public web targets without bypassing authentication, paywalls, or rate limits.',
+  },
 };
+

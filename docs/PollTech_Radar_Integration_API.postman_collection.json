@@ -1,0 +1,420 @@
+{
+  "info": {
+    "_postman_id": "polltech-radar-integration-v1",
+    "name": "PollTech Radar Integration API (v1)",
+    "description": "Collection of all 14 endpoints for PollTech Radar integration API including project provisioning, cursor pagination, collection triggers, analytics, and schedules.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/integration/v1",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "rad_test_secret_token_1234567890",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "67",
+      "type": "string"
+    },
+    {
+      "key": "nextCursor",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-Integration-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. System & Discovery",
+      "item": [
+        {
+          "name": "Health Check (Public)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Liveness & readiness probe. Returns database connectivity, driver (pg/pglite), and AI engine state."
+          }
+        },
+        {
+          "name": "Capabilities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/capabilities",
+              "host": ["{{baseUrl}}"],
+              "path": ["capabilities"]
+            },
+            "description": "Inspects active sources, connector states, rate limits, and supported API features."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Projects",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects?active=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true",
+                  "description": "Filter by active status (optional)"
+                },
+                {
+                  "key": "monitoringId",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by PollTech monitoring ID (optional)"
+                }
+              ]
+            },
+            "description": "Lists all monitored projects."
+          }
+        },
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.id) {",
+                  "    pm.collectionVariables.set('projectId', String(res.data.id));",
+                  "    console.log('Saved created projectId:', res.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "description": "Prevents duplicate project creation on network retry"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"PollTech Election Tracker\",\n  \"clientName\": \"PollTech Central\",\n  \"monitoringId\": \"pt-election-2026\",\n  \"keywords\": [\"election\", \"polling\", \"voters\", \"turnout\"],\n  \"brandTerms\": [\"PollTech\"],\n  \"competitorTerms\": [\"CompetitorX\"],\n  \"languages\": [\"en\"],\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            },
+            "description": "Provisions a new project and compiles a deterministic query plan without AI cost."
+          }
+        },
+        {
+          "name": "Get Project by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Retrieves project metadata and compiled query plan."
+          }
+        },
+        {
+          "name": "Update Project (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"PollTech Election Tracker (Updated)\",\n  \"keywords\": [\"election\", \"polling\", \"voters\", \"turnout\", \"ballot\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Partially updates an existing project."
+          }
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Deletes or deactivates a project and cascades related records."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Mentions & Cursor Pagination",
+      "item": [
+        {
+          "name": "Get Mentions (Page 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res && res.data && res.data.pagination && res.data.pagination.nextCursor) {",
+                  "    pm.collectionVariables.set('nextCursor', res.data.pagination.nextCursor);",
+                  "    console.log('Saved nextCursor for Page 2:', res.data.pagination.nextCursor);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/mentions?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "mentions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Page size (default 50, max 100)"
+                },
+                {
+                  "key": "source",
+                  "value": "hackernews",
+                  "disabled": true,
+                  "description": "Filter by source (optional)"
+                },
+                {
+                  "key": "sentiment",
+                  "value": "positive",
+                  "disabled": true,
+                  "description": "Filter by sentiment: positive | negative | neutral"
+                }
+              ]
+            },
+            "description": "Fetches page 1 of project mentions with engagement, reach, and AI lineage."
+          }
+        },
+        {
+          "name": "Get Mentions (Page 2 via Cursor)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/mentions?limit=10&cursor={{nextCursor}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "mentions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "cursor",
+                  "value": "{{nextCursor}}",
+                  "description": "Opaque base64 cursor saved from Page 1"
+                }
+              ]
+            },
+            "description": "Fetches subsequent page using the opaque cursor tuple."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Collection Controls",
+      "item": [
+        {
+          "name": "Trigger Project Collection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sources\": [\"hackernews\", \"bluesky\"],\n  \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/collect",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "collect"]
+            },
+            "description": "Immediately triggers live collection across specified or all enabled sources."
+          }
+        },
+        {
+          "name": "Trigger Global Batch Collection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"force\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/collect",
+              "host": ["{{baseUrl}}"],
+              "path": ["collect"]
+            },
+            "description": "Triggers batch collection across all active projects."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Analytics",
+      "item": [
+        {
+          "name": "Get Project Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/analytics?days=7",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "analytics"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "7",
+                  "description": "Lookback window in days (default 30)"
+                }
+              ]
+            },
+            "description": "Returns sentiment breakdown, total volume, source breakdown, and daily timeline trends."
+          }
+        },
+        {
+          "name": "Get Global Aggregate Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/analytics?days=14",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "14"
+                }
+              ]
+            },
+            "description": "Cross-project aggregate analytics across the entire platform."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Schedules",
+      "item": [
+        {
+          "name": "List Project Schedules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/schedules",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "schedules"]
+            },
+            "description": "Lists configured collection schedules for the project."
+          }
+        },
+        {
+          "name": "Create Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceCode\": \"all\",\n  \"mode\": \"cron\",\n  \"cronExpression\": \"0 */6 * * *\",\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/schedules",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "schedules"]
+            },
+            "description": "Creates an automated ingestion schedule."
+          }
+        }
+      ]
+    }
+  ]
+}

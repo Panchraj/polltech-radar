@@ -22,9 +22,17 @@ export function getDb(): Promise<DB> {
 async function init(): Promise<DB> {
   let db: DB;
   if (process.env.DATABASE_URL) {
-    const { neon } = await import('@neondatabase/serverless');
-    const { drizzle } = await import('drizzle-orm/neon-http');
-    db = drizzle(neon(process.env.DATABASE_URL), { schema }) as unknown as DB;
+    const url = process.env.DATABASE_URL;
+    if (url.includes('neon.tech')) {
+      const { neon } = await import('@neondatabase/serverless');
+      const { drizzle } = await import('drizzle-orm/neon-http');
+      db = drizzle(neon(url), { schema }) as unknown as DB;
+    } else {
+      const { Pool } = await import('pg');
+      const { drizzle } = await import('drizzle-orm/node-postgres');
+      const pool = new Pool({ connectionString: url });
+      db = drizzle(pool, { schema }) as unknown as DB;
+    }
   } else {
     const { PGlite } = await import('@electric-sql/pglite');
     const { drizzle } = await import('drizzle-orm/pglite');
@@ -97,6 +105,8 @@ const DDL = [
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS talkwalker_project TEXT`,
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS talkwalker_topics JSONB NOT NULL DEFAULT '[]'`,
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS key_messages JSONB NOT NULL DEFAULT '[]'`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS monitoring_id TEXT`,
+  `ALTER TABLE projects ADD COLUMN IF NOT EXISTS active INTEGER NOT NULL DEFAULT 1`,
   `ALTER TABLE mentions ADD COLUMN IF NOT EXISTS relevance INTEGER`,
   `ALTER TABLE mentions ADD COLUMN IF NOT EXISTS relevance_reason TEXT`,
   `ALTER TABLE mentions ADD COLUMN IF NOT EXISTS translations JSONB`,
@@ -439,6 +449,19 @@ const DDL = [
   `ALTER TABLE projects ADD COLUMN IF NOT EXISTS query_plan JSONB`,
   `ALTER TABLE mentions ADD COLUMN IF NOT EXISTS query_ids JSONB NOT NULL DEFAULT '[]'`,
   `CREATE INDEX IF NOT EXISTS mentions_query_ids ON mentions USING gin (query_ids)`,
+  `CREATE TABLE IF NOT EXISTS collection_schedules (
+    id SERIAL PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    source_code TEXT NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'manual',
+    expression TEXT,
+    timezone TEXT DEFAULT 'UTC',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    next_run_at TIMESTAMPTZ,
+    last_run_at TIMESTAMPTZ,
+    max_run_duration INTEGER DEFAULT 300,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
 ];
 
 async function ensureSchema(db: DB) {

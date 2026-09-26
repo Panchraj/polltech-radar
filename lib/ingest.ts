@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { getDb, setMeta, getMeta } from '@/lib/db';
-import { backfillCountries, countryFromDomain, countryFromUrl, toCountryCode } from '@/lib/country-codes';
+import { backfillCountries } from '@/lib/country-backfill';
+import { countryFromDomain, countryFromUrl, toCountryCode } from '@/lib/country-codes';
 import { mentions, projects, benchmarkEntities } from '@/lib/db/schema';
 import { CONNECTORS, kindOf } from '@/lib/connectors';
 import { setTelegramChannels } from '@/lib/connectors/telegram';
