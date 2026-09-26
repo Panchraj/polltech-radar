@@ -30,15 +30,9 @@ echo "=========================================================="
 npm ci --omit=dev --ignore-scripts=false || npm install --omit=dev
 
 echo "=========================================================="
-echo " 3. Running Database Schema Migrations"
+echo " 3. Database Schema Verification"
 echo "=========================================================="
-# Source DATABASE_URL from radar.env for drizzle-kit
-set -a
-# shellcheck disable=SC1090
-source "$ENV_FILE"
-set +a
-
-npx drizzle-kit push
+echo "Schema is automatically applied at runtime by lib/db/index.ts (ensureSchema)."
 
 echo "=========================================================="
 echo " 4. Building Next.js Production Bundle"
