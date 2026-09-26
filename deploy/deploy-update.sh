@@ -27,7 +27,7 @@ cd "$APP_DIR"
 echo "=========================================================="
 echo " 2. Installing Production Dependencies"
 echo "=========================================================="
-npm ci --omit=dev --ignore-scripts=false || npm install --omit=dev
+npm ci --ignore-scripts=false || npm install
 
 echo "=========================================================="
 echo " 3. Database Schema Verification"
